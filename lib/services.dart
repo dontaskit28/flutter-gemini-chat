@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class APIService {
@@ -16,6 +17,18 @@ class APIService {
       initialize();
     }
     List<Content> content = [Content.text(prompt)];
+    GenerateContentResponse response = await _model!.generateContent(content);
+    return response.text;
+  }
+
+  Future<String?> generateTextFromImage({required Uint8List imageBytes}) async {
+    if (_model == null) {
+      initialize();
+    }
+    DataPart imageParts = DataPart('image/jpeg', imageBytes);
+    List<Content> content = [
+      Content.multi([imageParts])
+    ];
     GenerateContentResponse response = await _model!.generateContent(content);
     return response.text;
   }

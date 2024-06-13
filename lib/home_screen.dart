@@ -27,55 +27,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('Gemini Chat'),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _textEditingController,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  hintText: 'Type a message',
-                  contentPadding: EdgeInsets.all(16),
-                ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startDocked,
+      floatingActionButton: _isLoading
+          ? Container(
+              margin: const EdgeInsets.only(bottom: 80),
+              child: Image.asset(
+                'assets/thinking.jpg',
+                height: 80,
+                width: 80,
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.send),
-              onPressed: _textEditingController.text.isEmpty
-                  ? null
-                  : () async {
-                      setState(() {
-                        _isLoading = true;
-                        _messages.add(MessageModel(
-                          message: _textEditingController.text,
-                          isSent: true,
-                        ));
-                        _textEditingController.clear();
-                      });
-
-                      String? response = await _apiService.generateText(
-                        prompt: _messages.last.message,
-                      );
-                      setState(() {
-                        _isLoading = false;
-                        _messages.add(MessageModel(
-                          message: response ?? 'No response',
-                          isSent: false,
-                        ));
-                      });
-                    },
-            ),
-          ],
-        ),
-      ),
+            )
+          : null,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -90,22 +56,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     : ListView.separated(
-                        itemCount: _messages.length + (_isLoading ? 1 : 0),
+                        itemCount: _messages.length,
                         shrinkWrap: true,
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 8),
                         itemBuilder: (context, index) {
-                          if (_isLoading && index == _messages.length) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
                           final message = _messages[index];
                           return Container(
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.6,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                               tileColor: message.isSent
                                   ? Colors.grey[200]
                                   : Colors.purple[100],
@@ -122,7 +86,57 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
               ),
+              const SizedBox(height: 20),
               const Divider(height: 1),
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                // padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textEditingController,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: 'Type a message',
+                          contentPadding: EdgeInsets.all(16),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send),
+                      onPressed: _textEditingController.text.isEmpty
+                          ? null
+                          : () async {
+                              if (_isLoading) {
+                                return;
+                              }
+                              setState(() {
+                                _isLoading = true;
+                                _messages.add(MessageModel(
+                                  message: _textEditingController.text,
+                                  isSent: true,
+                                ));
+                                _textEditingController.clear();
+                              });
+
+                              String? response = await _apiService.generateText(
+                                prompt: _messages.last.message,
+                              );
+                              setState(() {
+                                _isLoading = false;
+                                _messages.add(MessageModel(
+                                  message: response ?? 'No response',
+                                  isSent: false,
+                                ));
+                              });
+                            },
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
